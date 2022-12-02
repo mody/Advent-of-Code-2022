@@ -47,9 +47,41 @@ uint64_t play1(const Steps& steps)
     return score;
 }
 
+uint64_t play2(const Steps& steps)
+{
+    // X means you need to lose, Y means you need to end the round in a draw, and Z means you need to win.
+    static const std::map<std::string, unsigned char> mapping = {
+        { "AX", 'C' },
+        { "AY", 'A' },
+        { "AZ", 'B' },
+        { "BX", 'A' },
+        { "BY", 'B' },
+        { "BZ", 'C' },
+        { "CX", 'B' },
+        { "CY", 'C' },
+        { "CZ", 'A' }
+    };
+
+    uint64_t score = 0;
+    for (auto const& s : steps) {
+        const auto p1 = s.first;
+        auto p2 = s.second;
+        p2 = mapping.at(std::string(1, p1) + std::string(1, p2));
+        score += POINTS1.at(p2);
+        score += POINTS2.at(std::string(1, p1) + std::string(1, p2));
+    }
+    return score;
+}
+
+
 void day1(Steps const& steps)
 {
     fmt::print("1: {}\n", play1(steps));
+}
+
+void day2(Steps const& steps)
+{
+    fmt::print("1: {}\n", play2(steps));
 }
 
 int main()
@@ -64,6 +96,7 @@ int main()
     }
 
     day1(steps);
+    day2(steps);
 
     return 0;
 }
