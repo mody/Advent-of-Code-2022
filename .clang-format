@@ -17,7 +17,7 @@ BraceWrapping:
  AfterControlStatement: MultiLine
 BreakBeforeBinaryOperators: NonAssignment
 BreakConstructorInitializersBeforeComma: true
-ColumnLimit: 120
+ColumnLimit: 110
 CompactNamespaces: true
 Cpp11BracedListStyle: true
 ExperimentalAutoDetectBinPacking: false
