@@ -3,6 +3,7 @@
 #include <cassert>
 #include <fmt/core.h>
 #include <iostream>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -40,6 +41,42 @@ void part1(Groups const& groups)
     fmt::print("1: {}\n", cnt);
 }
 
+void part2(Groups const& groups)
+{
+    unsigned int cnt = 0;
+
+    for (auto const& g : groups) {
+        if (g.start1 <= g.start2) {
+            if (g.start2 <= g.end1) {
+                ++cnt;
+            }
+        } else {
+            if (g.start1 <= g.end2) {
+                ++cnt;
+            }
+        }
+
+#ifdef SLOW_AND_NAIVE
+        std::map<unsigned int, char> freq;
+        for (unsigned int i = g.start1; i <= g.end1; ++i) {
+            freq.insert({i, 0}).first->second += 1;
+        }
+        for (unsigned int i = g.start2; i <= g.end2; ++i) {
+            freq.insert({i, 0}).first->second += 1;
+        }
+        for (auto const& [_, count] : freq) {
+            if (count > 1) {
+                ++cnt;
+                break;
+            }
+        }
+#endif
+    }
+
+    fmt::print("2: {}\n", cnt);
+}
+
+
 int main()
 {
     Groups groups;
@@ -58,6 +95,7 @@ int main()
     }
 
     part1(groups);
+    part2(groups);
 
     return 0;
 }
