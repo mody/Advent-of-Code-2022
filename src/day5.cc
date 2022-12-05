@@ -35,7 +35,6 @@ void dump(Stacks const& stacks)
 
 }
 
-
 void part1(Stacks stacks, Ops const& ops)
 {
     std::string result;
@@ -55,6 +54,25 @@ void part1(Stacks stacks, Ops const& ops)
     }
 
     fmt::print("1: {}\n", result);
+}
+void part2(Stacks stacks, Ops const& ops)
+{
+    std::string result;
+
+    for (auto const& op : ops) {
+        Stack& from = stacks.at(op.from);
+        Stack& to = stacks.at(op.to);
+
+        auto start = std::next(from.rbegin(), op.amount).base();
+        std::copy(start, from.end(), std::back_inserter(to));
+        from.erase(start, from.end());
+    }
+
+    for (auto const& [i, stack] : stacks) {
+        result += stack.back();
+    }
+
+    fmt::print("2: {}\n", result);
 }
 
 int main()
@@ -102,6 +120,7 @@ int main()
     }
 
     part1(stacks, ops);
+    part2(stacks, ops);
 
     return 0;
 }
