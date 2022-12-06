@@ -32,3 +32,4 @@ SpaceAfterTemplateKeyword: false
 SpacesBeforeTrailingComments: 2
 Standard: Cpp11
 AllowShortBlocksOnASingleLine: false
+BinPackArguments: false
