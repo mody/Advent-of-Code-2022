@@ -1,6 +1,7 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <deque>
 #include <fmt/core.h>
 #include <iostream>
 #include <iterator>
@@ -72,6 +73,29 @@ void part1(DirPtr root)
     fmt::print("1: {}\n", count_sub_100000(root));
 }
 
+void part2(DirPtr root)
+{
+    const std::uint64_t current_space = 70000000 - root->size;
+    std::uint64_t smallest = root->size;
+
+    std::deque<DirPtr> q;
+    q.push_front(root);
+
+    for (; !q.empty();) {
+        DirPtr d = q.front();
+        q.pop_front();
+
+        if (d->size + current_space > 30000000) {
+            smallest = std::min(smallest, d->size);
+        }
+
+        for (auto sub : d->children) {
+            q.push_back(sub);
+        }
+    }
+
+    fmt::print("2: {}\n", smallest);
+}
 
 int main()
 {
@@ -126,6 +150,7 @@ int main()
     }
 
     part1(root);
+    part2(root);
 
     return 0;
 }
