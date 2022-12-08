@@ -3,7 +3,7 @@ project(AOC2022)
 
 # set(CMAKE_CXX_FLAGS "-Wall -Werror -Wshadow -std=c++20 -fno-omit-frame-pointer -ggdb3 -O3")
 # set(CMAKE_CXX_FLAGS "-Wall -Werror -Wshadow -std=c++20 -fno-omit-frame-pointer -ggdb3 -O0")
-# set(CMAKE_CXX_FLAGS "-Wall -Werror -Wshadow  -std=c++20 -fno-omit-frame-pointer -ggdb3 -O3 -fsanitize=address")
+set(CMAKE_CXX_FLAGS "-Wall -Werror -Wshadow  -std=c++20 -fno-omit-frame-pointer -ggdb3 -O3 -fsanitize=address")
 # set(CMAKE_CXX_FLAGS "-Wall -Werror -Wshadow  -std=c++20 -fno-omit-frame-pointer -ggdb3 -O3 -fsanitize=memory -fsanitize-memory-track-origins")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -44,3 +44,7 @@ target_link_libraries(day6 PRIVATE ${FMT_LIBRARIES})
 add_executable(day7 src/day7.cc)
 target_compile_features(day7 PRIVATE cxx_std_20)
 target_link_libraries(day7 PRIVATE ${FMT_LIBRARIES})
+
+add_executable(day8 src/day8.cc)
+target_compile_features(day8 PRIVATE cxx_std_20)
+target_link_libraries(day8 PRIVATE ${FMT_LIBRARIES})
