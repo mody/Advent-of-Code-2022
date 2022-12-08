@@ -115,6 +115,43 @@ void part1(World const& world)
     fmt::print("1: {}\n", visible);
 }
 
+std::uint64_t get_score(World const& world, const Point center)
+{
+    auto visible_distance = [&world, &center](const Coord dx, const Coord dy) -> unsigned int {
+        const unsigned char my_level = world.mapa.at(center);
+        unsigned int score = 0;
+        for (Point px = center;;) {
+            px.x += dx;
+            px.y += dy;
+            auto it = world.mapa.find(px);
+            if (it == world.mapa.end()) {
+                break;
+            }
+            ++score;
+            if (my_level <= it->second) {
+                break;
+            }
+        }
+        return score;
+    };
+
+    std::uint64_t score = 1;
+    score *= visible_distance(1, 0);
+    score *= visible_distance(0, 1);
+    score *= visible_distance(-1, 0);
+    score *= visible_distance(0, -1);
+    return score;
+}
+
+void part2(World const& world)
+{
+    std::uint64_t score = 0;
+    for (auto const& [px, _] : world.mapa) {
+        score = std::max(score, get_score(world, px));
+    }
+    fmt::print("2: {}\n", score);
+}
+
 
 int main()
 {
@@ -136,6 +173,7 @@ int main()
     world.min_max();
 
     part1(world);
+    part2(world);
 
     return 0;
 }
