@@ -1,4 +1,5 @@
-#include <boost/container_hash/hash.hpp>
+#include "point2d.h"
+
 #include <cassert>
 #include <cstdint>
 #include <fmt/core.h>
@@ -7,37 +8,7 @@
 #include <unordered_map>
 
 using Coord = std::int32_t;
-
-
-struct Point
-{
-    Coord x = -1, y = -1;
-
-    Point() noexcept = default;
-    Point(Coord x_, Coord y_) noexcept
-        : x {x_}
-        , y {y_}
-    { }
-
-    bool operator==(Point const& o) const noexcept { return x == o.x && y == o.y; }
-};
-
-
-namespace std {
-
-template<>
-struct hash<Point>
-{
-    size_t operator()(Point const& p) const noexcept
-    {
-        size_t seed = 0;
-        boost::hash_combine(seed, p.x);
-        boost::hash_combine(seed, p.y);
-        return seed;
-    }
-};
-
-}  // namespace std
+using Point = Gfx_2d::Point<Coord>;
 
 struct World {
     std::unordered_map<Point, unsigned char> mapa;
