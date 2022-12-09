@@ -3,8 +3,9 @@
 #include <cassert>
 #include <fmt/core.h>
 #include <iostream>
-#include <memory>
+#include <iterator>
 #include <string>
+#include <type_traits>
 #include <unordered_set>
 #include <vector>
 
@@ -20,62 +21,47 @@ struct Step
 
 using Steps = std::vector<Step>;
 
-void dump(Point const& head, Point const& tail)
+template<unsigned int KNOTS>
+void part(Steps const& steps)
 {
-    Coord min_x = std::numeric_limits<Coord>::max();
-    Coord min_y = std::numeric_limits<Coord>::max();
-    Coord max_x = std::numeric_limits<Coord>::min();
-    Coord max_y = std::numeric_limits<Coord>::min();
-
-    for (auto const& px : {head, tail}) {
-        min_x = std::min(min_x, px.x);
-        min_y = std::min(min_y, px.y);
-        max_x = std::max(max_x, px.x);
-        max_y = std::max(max_y, px.y);
-    }
-
-    for (Coord y = min_y; y <= max_y; ++y) {
-        for (Coord x = min_x; x <= max_x; ++x) {
-            const Point p {x, y};
-            if (p == tail) {
-                fmt::print("T");
-            } else if (p == head) {
-                fmt::print("H");
-            } else {
-                fmt::print(".");
-            }
-        }
-        fmt::print("\n");
-    }
-    fmt::print("\n");
-}
-
-void part1(Steps const& steps)
-{
-    Point head{}, tail{}, last_head{};
+    std::array<Point, KNOTS> points;
 
     std::unordered_set<Point> positions{};
-    positions.insert(tail);
+    positions.insert(points.at(0));
 
     for (auto const& step : steps) {
         for (unsigned i = 0; i < step.count; ++i) {
-            last_head = head;
-            head += step.direction;
+            points.at(0) += step.direction;
 
-            auto dist = head - tail;
-            if (std::abs(dist.dx) > 1 || std::abs(dist.dy) > 1) {
-                tail = last_head;
+            for (unsigned j = 1; j < KNOTS; ++j) {
+                Point const& head = points.at(j - 1);
+                Point & tail = points.at(j);
+
+                auto dist = head - tail;
+                if (!(std::abs(dist.dx) > 1 || std::abs(dist.dy) > 1)) {
+                    continue;
+                }
+
+                if (dist.dx == 0) {
+                    tail.y += (dist.dy > 0) ? 1 : -1;
+                } else if (dist.dy == 0) {
+                    tail.x += (dist.dx > 0) ? 1 : -1;
+                } else {
+                    // diagonal
+                    tail.x += (dist.dx > 0) ? 1 : -1;
+                    tail.y += (dist.dy > 0) ? 1 : -1;
+                }
+
+                dist = head - tail;
+                assert(std::abs(dist.dx) <= 1);
+                assert(std::abs(dist.dy) <= 1);
             }
-            positions.insert(tail);
 
-            dist = head - tail;
-
-            assert(std::abs(dist.dx) <= 1);
-            assert(std::abs(dist.dy) <= 1);
+            positions.insert(points.back());
         }
     }
 
-    fmt::print("1: {}\n", positions.size());
+    fmt::print("{}: {}\n", KNOTS, positions.size());
 }
 
 
@@ -100,7 +86,8 @@ int main()
         steps.emplace_back(std::move(s));
     }
 
-    part1(steps);
+    part<2>(steps);
+    part<10>(steps);
 
     return 0;
 }
