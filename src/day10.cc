@@ -21,7 +21,6 @@ class CPU
     Ops::iterator ip {};
     std::int64_t x = 1;
     unsigned op_ticks = 0;
-    std::int64_t ip_ticks = 0;
 
 public:
     CPU(Ops o)
@@ -29,14 +28,12 @@ public:
     { }
 
     std::int64_t get_x() const noexcept { return x; }
-    std::int64_t get_ticks() const noexcept { return ip_ticks; }
 
     void init() noexcept
     {
         ip = ops.begin();
         x = 1;
         op_ticks = 0;
-        ip_ticks = 0;
     }
 
     template<typename CallBack>
@@ -60,8 +57,6 @@ public:
             }
             ++ip;
         }
-
-        ++ip_ticks;
 
         if (ip == ops.end()) {
             return false;
@@ -93,6 +88,32 @@ void part1(CPU cpu)
 }
 
 
+void part2(CPU cpu)
+{
+    std::int64_t ticks = 0;
+    cpu.init();
+
+    auto cb = [&ticks](CPU* cpu) {
+        auto beam = ticks % 40;
+        if (beam == 0) {
+            fmt::print("\n");
+        }
+        if (cpu->get_x() == beam || cpu->get_x() + 1 == beam || cpu->get_x() - 1 == beam) {
+            fmt::print("#");
+        } else {
+            fmt::print(".");
+        }
+        ++ticks;
+    };
+
+    for (bool stop = false; !stop;) {
+        stop = !cpu.tick(cb);
+    }
+    fmt::print("\n");
+    // EFUGLPAP
+}
+
+
 int main()
 {
     Ops ops;
@@ -111,6 +132,7 @@ int main()
     CPU cpu(ops);
 
     part1(cpu);
+    part2(cpu);
 
     return 0;
 }
