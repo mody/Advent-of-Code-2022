@@ -8,6 +8,7 @@
 #include <fmt/core.h>
 #include <functional>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -37,13 +38,13 @@ struct Ape
 
     std::uint64_t inspections = 0;
 
-    bool process_one(Apes& apes)
+    bool process_one(Apes& apes, std::optional<std::uint64_t> global_div = std::nullopt)
     {
         if (items.empty()) {
             return false;
         }
 
-        auto v = items.front();
+        std::uint64_t v = items.front();
         items.pop_front();
 
         switch (op) {
@@ -53,9 +54,14 @@ struct Ape
         default: assert(false);
         }
 
-        v = v / 3;
+        if (!global_div) {
+            v = v / 3u;
+        } else {
+            v = v % global_div.value();
+        }
 
-        if ((v % divisible) == 0) {
+        auto new_val = v % divisible;
+        if ((new_val) == 0) {
             apes.at(dst_true).items.push_back(v);
         } else {
             apes.at(dst_false).items.push_back(v);
@@ -83,6 +89,29 @@ void part1(Apes apes)
     assert(inspections.size() > 2);
 
     fmt::print("1: {}\n", (*inspections.begin())*(*std::next(inspections.begin())));
+}
+
+void part2(Apes apes)
+{
+    uint64_t global_div = 1;
+    for (auto& ape : apes) {
+        global_div *= ape.divisible;
+    }
+
+    for (unsigned round = 0; round < 10000; ++round) {
+        for (auto& ape : apes) {
+            while (ape.process_one(apes, global_div)) {
+            };
+        }
+    }
+
+    std::set<std::uint64_t, std::greater<std::uint64_t>> inspections;
+    for (auto const& ape : apes) {
+        inspections.insert(ape.inspections);
+    }
+    assert(inspections.size() > 2);
+
+    fmt::print("2: {}\n", (*inspections.begin())*(*std::next(inspections.begin())));
 }
 
 int main()
@@ -156,6 +185,7 @@ int main()
     }
 
     part1(apes);
+    part2(apes);
 
     return 0;
 }
