@@ -16,6 +16,15 @@
 
 using Point = Gfx_2d::Point<int>;
 
+using EdgeWeightProp = boost::property<boost::edge_weight_t, unsigned>;
+using Graph = boost::adjacency_list<
+    boost::vecS,
+    boost::vecS,
+    boost::directedS,
+    boost::property<boost::vertex_distance_t, int32_t>,
+    EdgeWeightProp>;
+using Vertex = boost::graph_traits<Graph>::vertex_descriptor;
+
 
 class World
 {
@@ -24,6 +33,11 @@ class World
 
     int32_t start = -1;
     int32_t end = -1;
+
+    Graph g;
+    std::vector<Vertex> vMap;
+
+    void build_tree();
 
 public:
     void append(std::string input) noexcept
@@ -90,27 +104,8 @@ public:
     void part2();
 };
 
-
-void World::part1()
+void World::build_tree()
 {
-    dump();
-    assert(get_start() >= 0);
-    assert(get_start() < get_size());
-    assert(get_end() >= 0);
-    assert(get_end() < get_size());
-
-    using EdgeWeightProp = boost::property<boost::edge_weight_t, unsigned>;
-    using Graph = boost::adjacency_list<
-        boost::vecS,
-        boost::vecS,
-        boost::directedS,
-        boost::property<boost::vertex_distance_t, int32_t>,
-        EdgeWeightProp>;
-    using Vertex = boost::graph_traits<Graph>::vertex_descriptor;
-
-    Graph g;
-    std::vector<Vertex> vMap;
-
     for (int32_t idx = 0; idx < get_size(); ++idx) {
         vMap.push_back(boost::add_vertex(g));
     }
@@ -131,6 +126,16 @@ void World::part1()
             boost::add_edge(vMap.at(xy_to_index(pxFrom)), vMap.at(xy_to_index(pxTo)), 1, g);
         }
     }
+}
+
+void World::part1()
+{
+    assert(get_start() >= 0);
+    assert(get_start() < get_size());
+    assert(get_end() >= 0);
+    assert(get_end() < get_size());
+
+    build_tree();
 
     boost::dijkstra_shortest_paths(
         g, vMap.at(get_start()), boost::distance_map(boost::get(boost::vertex_distance, g)));
@@ -139,6 +144,42 @@ void World::part1()
     const int32_t d = dist[vMap.at(get_end())];
 
     fmt::print("1: {}\n", d);
+}
+
+
+void World::part2()
+{
+    for (int32_t idx = 0; idx < get_size(); ++idx) {
+        auto const& pxFrom = index_to_xy(idx);
+
+        for (auto const& dir : {Gfx_2d::North, Gfx_2d::South, Gfx_2d::East, Gfx_2d::West}) {
+            const Point pxTo = pxFrom + dir;
+            if (!has(pxTo)) {
+                continue;
+            }
+            const int c1 = get(pxFrom);
+            const int c2 = get(pxTo);
+            if (c2 - c1 > 1) {
+                continue;
+            }
+            boost::add_edge(vMap.at(xy_to_index(pxFrom)), vMap.at(xy_to_index(pxTo)), 1, g);
+        }
+    }
+
+    int32_t shortest = std::numeric_limits<int32_t>::max();
+
+    for (int32_t start_pos = data.find('a'); start_pos != std::string::npos;
+         start_pos = data.find('a', start_pos+1))
+    {
+        boost::dijkstra_shortest_paths(
+            g, vMap.at(start_pos), boost::distance_map(boost::get(boost::vertex_distance, g)));
+
+        auto const& dist = boost::get(boost::vertex_distance, g);
+        const int32_t d = dist[vMap.at(get_end())];
+        shortest = std::min(shortest, d);
+    }
+
+    fmt::print("2: {}\n", shortest);
 }
 
 int main()
@@ -154,6 +195,7 @@ int main()
     }
 
     world.part1();
+    world.part2();
 
     return 0;
 }
