@@ -35,6 +35,12 @@ struct Point
         return *this;
     }
 
+    friend Point operator+(Point lhs, Direction const& o) noexcept
+    {
+        lhs += o;
+        return lhs;
+    }
+
     Direction operator-(Point const& o) const noexcept { return {x - o.x, y - o.y}; }
 
     bool operator<(Point const& o) const noexcept { return std::tie(x, y) < std::tie(o.x, o.y); }
