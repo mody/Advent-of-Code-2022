@@ -15,6 +15,11 @@ constexpr Direction South{0,  1};
 constexpr Direction West{-1, 0};
 constexpr Direction East{ 1, 0};
 
+constexpr Direction Up{0, -1};
+constexpr Direction Down{0,  1};
+constexpr Direction Left{-1, 0};
+constexpr Direction Right{ 1, 0};
+
 template<typename Coord>
 struct Point
 {
