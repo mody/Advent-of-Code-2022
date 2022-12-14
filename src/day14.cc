@@ -18,27 +18,18 @@ class World
 {
     using Mapa = std::map<Point, unsigned char>;
 
-    Coord min_x {}, min_y {}, max_x {}, max_y {};
     Mapa mapa;
+    Coord min_x = std::numeric_limits<Coord>::max(), min_y = std::numeric_limits<Coord>::max();
+
 public:
+    Coord max_x = std::numeric_limits<Coord>::min(), max_y = std::numeric_limits<Coord>::min();
 
     auto insert(Mapa::value_type v) {
-        mapa.insert(std::move(v));
-    }
-
-    void min_max()
-    {
-        min_x = std::numeric_limits<Coord>::max();
-        min_y = std::numeric_limits<Coord>::max();
-        max_x = std::numeric_limits<Coord>::min();
-        max_y = std::numeric_limits<Coord>::min();
-
-        for (auto const& [px, _] : mapa) {
-            min_x = std::min(min_x, px.x);
-            min_y = std::min(min_y, px.y);
-            max_x = std::max(max_x, px.x);
-            max_y = std::max(max_y, px.y);
-        }
+        min_x = std::min(min_x, v.first.x);
+        min_y = std::min(min_y, v.first.y);
+        max_x = std::max(max_x, v.first.x);
+        max_y = std::max(max_y, v.first.y);
+        return mapa.insert_or_assign(v.first, v.second);
     }
 
     void dump() const noexcept
@@ -55,46 +46,76 @@ public:
             }
             fmt::print("\n");
         }
-        fmt::print("\n");
+        fmt::print("dims: {}-{} x {}-{}\n", min_x, max_x, min_y, max_y);
+        std::cout.flush();
     }
 
 
-    bool drop(Point drop)
+    bool drop1(Point drop)
     {
         for(;;) {
             drop += Gfx_2d::Down;
 
-            if (drop.x < min_x || drop.x > max_x || drop.y < min_y || drop.y > max_y) {
+            if (drop.x > max_x || drop.y > max_y) {
                 // fall through
                 return false;
             }
 
-            auto it = mapa.find(drop);
-            if (it == mapa.end()) {
+            if (!mapa.contains(drop)) {
                 // no obstacle
                 continue;
             }
 
             drop += Gfx_2d::Left;
-            it = mapa.find(drop);
-            if (it == mapa.end()) {
+            if (!mapa.contains(drop)) {
                 continue;
             }
 
             drop += Gfx_2d::Right;
             drop += Gfx_2d::Right;
 
-            it = mapa.find(drop);
-            if (it == mapa.end()) {
+            if (!mapa.contains(drop)) {
                 continue;
             }
 
             drop += Gfx_2d::Left;
             drop += Gfx_2d::Up;
-            mapa.insert({drop, 'o'});
-            break;
+
+            return insert({drop, 'o'}).second;
         }
-        return true;
+    }
+
+    bool drop2(Point drop, Coord limit_y)
+    {
+        for(;;) {
+            drop += Gfx_2d::Down;
+
+            if (drop.y < limit_y) {
+                if (!mapa.contains(drop)) {
+                    // no obstacle
+                    continue;
+                }
+
+                drop += Gfx_2d::Left;
+                if (!mapa.contains(drop)) {
+                    continue;
+                }
+
+                drop += Gfx_2d::Right;
+                drop += Gfx_2d::Right;
+
+                if (!mapa.contains(drop)) {
+                    continue;
+                }
+
+                drop += Gfx_2d::Left;
+                drop += Gfx_2d::Up;
+            } else {
+                drop += Gfx_2d::Up;
+            }
+
+            return insert({drop, 'o'}).second;
+        }
     }
 };
 
@@ -102,23 +123,32 @@ public:
 void part1(World world)
 {
     unsigned score = 0;
-    while (world.drop({500, 0})) {
+    while (world.drop1({500, 0})) {
         ++score;
     }
-    // world.dump();
 
     fmt::print("1: {}\n", score);
+    std::cout.flush();
+}
+
+
+void part2(World world)
+{
+    unsigned score = 0;
+    Coord limit_y = world.max_y + 2;
+
+    while (world.drop2({500, 0}, limit_y)) {
+        ++score;
+    }
+
+    fmt::print("2: {}\n", score);
+    std::cout.flush();
 }
 
 
 int main()
 {
     World world;
-
-    world.insert({{500, 0}, '+'});
-
-    fmt::print("Start\n");
-    std::cout.flush();
 
     std::string line;
     while(std::getline(std::cin, line)) {
@@ -172,9 +202,9 @@ int main()
             p1 = p2;
         }
     }
-    world.min_max();
 
     part1(world);
+    part2(world);
 
     return 0;
 }
