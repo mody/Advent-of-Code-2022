@@ -12,6 +12,7 @@ pkg_check_modules(FMT REQUIRED QUIET fmt)
 # pkg_check_modules(PC_RapidJSON QUIET RapidJSON)
 
 #  find_package(TBB REQUIRED tbb)
+#  pkg_check_modules(TBB REQUIRED QUIET tbb)
 
 # set(BOOST_ROOT "/home/ov699/opt/")
 #  find_package(Boost 1.67.0 COMPONENTS unit_test_framework REQUIRED)
