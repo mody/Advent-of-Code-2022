@@ -49,6 +49,8 @@ struct Point
     Direction operator-(Point const& o) const noexcept { return {x - o.x, y - o.y}; }
 
     bool operator<(Point const& o) const noexcept { return std::tie(x, y) < std::tie(o.x, o.y); }
+
+    Coord manhattan_dist(Point const& o) const noexcept { return std::abs(x - o.x) + std::abs(y - o.y); }
 };
 
 }  // namespace Gfx_2d
