@@ -78,6 +78,10 @@ add_executable(day15 src/day15.cc)
 target_compile_features(day15 PRIVATE cxx_std_20)
 target_link_libraries(day15 PRIVATE ${FMT_LIBRARIES})
 
+add_executable(day16 src/day16.cc)
+target_compile_features(day16 PRIVATE cxx_std_20)
+target_link_libraries(day16 PRIVATE ${FMT_LIBRARIES})
+
 add_executable(day17 src/day17.cc)
 target_compile_features(day17 PRIVATE cxx_std_20)
 target_link_libraries(day17 PRIVATE ${FMT_LIBRARIES})
