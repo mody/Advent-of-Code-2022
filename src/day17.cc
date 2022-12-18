@@ -5,10 +5,13 @@
 #include <fmt/core.h>
 #include <iostream>
 #include <memory>
+#include <set>
+#include <sstream>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
-using Coord = std::int32_t;
+using Coord = std::int64_t;
 using Point = Gfx_2d::Point<Coord>;
 
 static constexpr Coord MIN_X = 0;
@@ -117,7 +120,13 @@ public:
         wind_pos = 0;
     }
 
-    void simulate_piece();
+    bool simulate_piece();
+
+    void clear_states() noexcept
+    {
+        states.clear();
+        // mapa.clear();
+    }
 
     Coord get_max_y() const noexcept
     {
@@ -128,11 +137,47 @@ public:
         return max_y;
     }
 
+    std::string top_line() const noexcept
+    {
+        std::stringstream ss;
+        Coord max_y = get_max_y();
+        for (Coord y = max_y; y >= std::max(max_y - 100, (Coord)0); --y) {
+            for (Coord x = MIN_X; x <= MAX_X; ++x) {
+                const Point p {x, y};
+                const auto it = mapa.find(p);
+                if (it != mapa.end()) {
+                    ss << it->second;
+                } else {
+                    ss << ".";
+                }
+            }
+            ss << "\n";
+        }
+        return ss.str();
+    }
+
+    std::string top_line2() const noexcept
+    {
+        std::stringstream ss;
+        Coord max_y = get_max_y();
+        for (Coord x = MIN_X + 1; x < MAX_X; ++x) {
+            Coord deep = 0;
+            for (Coord y = max_y; y > 0; --y) {
+                if (mapa.contains(Point{x, y})) {
+                    ss << deep << ',';
+                    break;
+                }
+                ++deep;
+            }
+        }
+        return ss.str();
+    }
+
     void dump() const noexcept
     {
         Coord max_y = get_max_y();
         for (Coord y = max_y; y >= 0; --y) {
-            for (Coord x = MIN_X; x <= MAX_X; ++x) {
+            for (Coord x = MIN_X + 1; x < MAX_X; ++x) {
                 const Point p {x, y};
                 const auto it = mapa.find(p);
                 if (it != mapa.end()) {
@@ -156,9 +201,11 @@ private:
     std::string wind;
     size_t wind_pos = 0;
 
+    unsigned piece_id = 0;
+
     Mapa mapa;
 
-    unsigned piece_id = 0;
+    std::set<size_t> states;
 };
 
 
@@ -172,8 +219,11 @@ bool Brick::move_wind(unsigned char c)
     Gfx_2d::Direction dir;
     if (c == '<') {
         dir = Gfx_2d::Left;
+        // fmt::print("left\n");
     } else if (c == '>') {
         dir = Gfx_2d::Right;
+        // fmt::print("right\n");
+    } else if (c == '>') {
     } else {
         assert(false);
     }
@@ -187,8 +237,9 @@ bool Brick::move_it(Gfx_2d::Direction const& d)
     }
 
     bool collision = false;
-    for (auto& p : points) {
+    for (auto const& p : points) {
         if (p.y == 0 || p.x == MIN_X || p.x == MAX_X || game->get_map().contains(p)) {
+            // fmt::print("collision: {},{},{},{}\n", p.y == 0, p.x == MIN_X, p.x == MAX_X, game->get_map().contains(p));
             collision = true;
             break;
         }
@@ -217,10 +268,21 @@ unsigned char Game::next_wind()
     return c;
 }
 
-void Game::simulate_piece()
+bool Game::simulate_piece()
 {
-    Coord base_y = get_max_y() + 4;
+    {
+        size_t h = 13;
+        boost::hash_combine(h, piece_id);
+        boost::hash_combine(h, wind_pos);
+        boost::hash_combine(h, top_line2());
 
+        if (states.insert(h).second == false) {
+            // already known state
+            return false;
+        }
+    }
+
+    Coord base_y = get_max_y() + 4;
     std::shared_ptr<Brick> brick;
 
     switch (piece_id) {
@@ -233,26 +295,95 @@ void Game::simulate_piece()
     }
 
     assert(brick);
+
     for (;;) {
-        brick->move_wind(next_wind());
+        brick->move_wind(wind.at(wind_pos));
+        wind_pos = (wind_pos + 1) % wind.size();
         if (brick->move_down()) {
             brick->to_map();
             break;
         }
     }
 
-    // dump();
-
     piece_id = (piece_id + 1) % 5;
+
+    return true;
 }
+
+struct Repeated {
+    Coord iter {}, diff {};
+};
 
 void part(Game game, Coord iterations)
 {
-    for (Coord i = 0; i < iterations; ++i) {
-        game.simulate_piece();
+    Coord computed_y = 0;
+    std::vector<Repeated> diffs;
+
+    for (Coord iter = 0; iter < iterations; ++iter) {
+        if (!game.simulate_piece()) {
+            diffs.push_back({iter, game.get_max_y()});
+            break;
+        }
+    }
+    assert(diffs.size() == 1);
+
+    // for (auto const& d : diffs) {
+    //     fmt::print("iter: {}, height: {}\n", d.iter, d.diff);
+    // }
+    // fmt::print("\n");
+    // std::cout.flush();
+
+    iterations -= diffs.at(0).iter;
+    computed_y = diffs.at(0).diff;
+
+    game.clear_states();
+
+    for (Coord iter = 0; iter < iterations; ++iter) {
+        if (!game.simulate_piece()) {
+            diffs.push_back({iter, game.get_max_y() - diffs.at(0).diff});
+            break;
+        }
     }
 
-    fmt::print("{}: {}\n", iterations, game.get_max_y());
+    if (diffs.size() == 1) {
+        diffs.push_back({iterations, game.get_max_y() - diffs.at(0).diff});
+    }
+
+    assert(diffs.size() == 2);
+
+    // for (auto const& d : diffs) {
+    //     fmt::print("iter: {}, height: {}\n", d.iter, d.diff);
+    // }
+    // fmt::print("\n");
+    // std::cout.flush();
+
+    computed_y += (iterations / diffs.at(1).iter) * diffs.at(1).diff;
+
+    // the rest
+    iterations = iterations % diffs.at(1).iter;
+
+    if (iterations) {
+        game.clear_states();
+
+        for (Coord iter = 0; iter < iterations; ++iter) {
+            if (!game.simulate_piece()) {
+                assert(false);
+                break;
+            }
+        }
+        diffs.push_back({iterations, game.get_max_y() - diffs.at(0).diff - diffs.at(1).diff});
+        assert(diffs.size() == 3);
+
+        // for (auto const& d : diffs) {
+        //     fmt::print("iter: {}, height: {}\n", d.iter, d.diff);
+        // }
+        // fmt::print("\n");
+        // std::cout.flush();
+
+        computed_y += diffs.at(2).diff;
+    }
+
+    fmt::print("{}\n", computed_y);
 }
 
 int main()
@@ -267,9 +398,8 @@ int main()
         game.setWind(std::move(line));
     }
 
-    // part(game, 20);
     part(game, 2022);
-    // part(game, 1000000000000);
+    part(game, 1000000000000);
 
     return 0;
 }
