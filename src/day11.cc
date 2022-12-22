@@ -9,6 +9,7 @@
 #include <functional>
 #include <iostream>
 #include <optional>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -125,7 +126,7 @@ int main()
             break;
         }
         assert(boost::starts_with(line, "Monkey"));
-        assert(ape_id == std::stoi(&line[7]));
+        assert(ape_id == static_cast<unsigned>(std::stoi(&line[7])));
 
         Ape ape{};
 

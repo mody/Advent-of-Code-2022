@@ -72,10 +72,10 @@ void part1(CPU cpu)
     std::int64_t ticks = 1, signal = 0;
     cpu.init();
 
-    auto cb = [&ticks, &signal](CPU* cpu) {
+    auto cb = [&ticks, &signal](CPU* lCpu) {
         if (((ticks - 20) % 40) == 0) {
-            signal += cpu->get_x() * ticks;
-            // fmt::print("{}\t - signal: {}\n", ticks, cpu->get_x() * ticks);
+            signal += lCpu->get_x() * ticks;
+            // fmt::print("{}\t - signal: {}\n", ticks, lCpu->get_x() * ticks);
         }
         ++ticks;
     };
@@ -93,12 +93,12 @@ void part2(CPU cpu)
     std::int64_t ticks = 0;
     cpu.init();
 
-    auto cb = [&ticks](CPU* cpu) {
+    auto cb = [&ticks](CPU* lCpu) {
         auto beam = ticks % 40;
         if (beam == 0) {
             fmt::print("\n");
         }
-        if (cpu->get_x() == beam || cpu->get_x() + 1 == beam || cpu->get_x() - 1 == beam) {
+        if (lCpu->get_x() == beam || lCpu->get_x() + 1 == beam || lCpu->get_x() - 1 == beam) {
             fmt::print("#");
         } else {
             fmt::print(".");
