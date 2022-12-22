@@ -136,7 +136,7 @@ int main()
         }
         Coord x = 0;
         for (const char& c : line) {
-            world.mapa.insert({{x, y}, c});
+            world.mapa.insert({{x, y}, static_cast<unsigned char>(c)});
             ++x;
         }
         ++y;

@@ -44,7 +44,7 @@ public:
     {
         max_x = input.size();
 
-        int32_t pos = input.find('S');
+        size_t pos = input.find('S');
         if (pos != std::string::npos) {
             start = data.size() + pos;
             input.at(pos) = 'a';
@@ -61,7 +61,7 @@ public:
 
     int32_t get_size() const noexcept
     {
-        assert(data.size() == (max_x * max_y));
+        assert(static_cast<int32_t>(data.size()) == (max_x * max_y));
         return data.size();
     }
 
@@ -78,7 +78,7 @@ public:
     }
 
     bool has(int32_t index) const noexcept {
-        return index >= 0 && index < data.size();
+        return index >= 0 && index < static_cast<int32_t>(data.size());
     }
 
     unsigned char get(Point const& px) const { return data.at(xy_to_index(px)); }
@@ -168,7 +168,7 @@ void World::part2()
 
     int32_t shortest = std::numeric_limits<int32_t>::max();
 
-    for (int32_t start_pos = data.find('a'); start_pos != std::string::npos;
+    for (size_t start_pos = data.find('a'); start_pos != std::string::npos;
          start_pos = data.find('a', start_pos+1))
     {
         boost::dijkstra_shortest_paths(

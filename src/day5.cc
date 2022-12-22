@@ -43,7 +43,7 @@ void part1(Stacks stacks, Ops const& ops)
         Stack& from = stacks.at(op.from);
         Stack& to = stacks.at(op.to);
 
-        for (auto i = 0; i < op.amount; ++i) {
+        for (auto i = 0u; i < op.amount; ++i) {
             to.push_back(from.back());
             from.pop_back();
         }

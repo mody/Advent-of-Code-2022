@@ -13,11 +13,11 @@ B Y ... paper
 C Z ... scissors
 #endif
 
-using Steps = std::vector<std::pair<unsigned char, unsigned char>>;
+using Steps = std::vector<std::pair<char, char>>;
 
-using Points1 = std::map<unsigned char, int>;
+using Points1 = std::map<char, int>;
 using Points2 = std::map<std::string, int>;
-using Mapping = std::array<unsigned char, 3>;
+using Mapping = std::array<char, 3>;
 
 const Points1 POINTS1 = {{'A', 1}, {'B', 2}, {'C', 3}};
 const Points2 POINTS2 = {
@@ -42,7 +42,7 @@ uint64_t play1(const Steps& steps)
         auto p2 = s.second;
         p2 = mapping.at(p2 - 'X');
         score += POINTS1.at(p2);
-        score += POINTS2.at(std::string(1, p1) + std::string(1, p2));
+        score += POINTS2.at(std::string({p1, p2}));
     }
     return score;
 }
@@ -50,7 +50,7 @@ uint64_t play1(const Steps& steps)
 uint64_t play2(const Steps& steps)
 {
     // X means you need to lose, Y means you need to end the round in a draw, and Z means you need to win.
-    static const std::map<std::string, unsigned char> mapping = {
+    static const std::map<std::string, char> mapping = {
         { "AX", 'C' },
         { "AY", 'A' },
         { "AZ", 'B' },
@@ -64,11 +64,11 @@ uint64_t play2(const Steps& steps)
 
     uint64_t score = 0;
     for (auto const& s : steps) {
-        const auto p1 = s.first;
-        auto p2 = s.second;
-        p2 = mapping.at(std::string(1, p1) + std::string(1, p2));
+        const char p1 = s.first;
+        char p2 = s.second;
+        p2 = mapping.at(std::string({p1, p2}));
         score += POINTS1.at(p2);
-        score += POINTS2.at(std::string(1, p1) + std::string(1, p2));
+        score += POINTS2.at(std::string({p1, p2}));
     }
     return score;
 }
