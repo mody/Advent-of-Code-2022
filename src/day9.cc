@@ -1,5 +1,6 @@
 #include "point2d.h"
 
+#include <array>
 #include <cassert>
 #include <fmt/core.h>
 #include <iostream>
