@@ -13,6 +13,8 @@
 #include <numeric>
 #include <sstream>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 using StringVect = std::vector<std::string>;
@@ -51,26 +53,60 @@ struct State {
 
 using StateMap = std::map<KeySet, State>;
 
-std::string to_string(KeySet const& ks) {
-    std::stringstream ss;
-    for (auto const& k : ks) {
-        if (ss.tellp() > 0) {
-            ss << ",";
-        }
-        ss << k;
-    }
-    return ss.str();
-}
+enum class Action
+{
+    MOVE,
+    OPEN
+};
 
-std::string to_string(State const& s) {
-    return fmt::format(
-        "(currrent: {}, valves: {}, minutes: {}, total_score: {}, moves: {})",
-        s.current,
-        s.valves,
-        s.minutes,
-        s.total_score,
-        to_string(s.available_moves));
-}
+struct Player
+{
+    Action action = Action::MOVE;
+    Index position = 0;
+
+    bool operator==(Player const& oth) const noexcept
+    {
+        return action == oth.action && position == oth.position;
+    }
+};
+
+struct Players
+{
+    Player p1, p2;
+    unsigned minutes = 0;
+
+    bool operator==(Players const& oth) const noexcept
+    {
+        return p1 == oth.p1 && p2 == oth.p2 && minutes == oth.minutes;
+    }
+};
+
+struct State2
+{
+    State2(Data d)
+        : data {std::move(d)}
+    { }
+
+    Data data;
+
+    Players players;
+
+    unsigned valves = 0;
+    unsigned minutes = 1;
+    unsigned total_score = 0;
+
+    bool operator< (State2 const & oth) const noexcept {
+        return !(operator>(oth));
+    }
+
+    bool operator> (State2 const & oth) const noexcept {
+        const unsigned predicted = total_score + ((26 - minutes) * valves);
+        const unsigned oth_predicted = oth.total_score + ((26 - oth.minutes) * oth.valves);
+        return predicted > oth_predicted;
+    }
+};
+
+using StateMap2 = std::unordered_map<Players, State2>;
 
 namespace std {
 
@@ -88,32 +124,101 @@ struct hash<Pipe>
     }
 };
 
+template<>
+struct hash<Player>
+{
+    size_t operator()(Player const& p) const noexcept
+    {
+        size_t seed = 0;
+        boost::hash_combine(seed, p.action);
+        boost::hash_combine(seed, p.position);
+        return seed;
+    }
+};
+
+template<>
+struct hash<Players>
+{
+    size_t operator()(Players const& p) const noexcept
+    {
+        size_t seed = 0;
+        boost::hash_combine(seed, std::hash<Player>()(p.p1));
+        boost::hash_combine(seed, std::hash<Player>()(p.p2));
+        boost::hash_combine(seed, p.minutes);
+        return seed;
+    }
+};
+
 }  // namespace std
 
 
 namespace {
 
-// void print(std::ostream& os, const Dist_Type& x)
-// {
-//     os << x;
-// }
-
-// template<typename Array>
-// void print(std::ostream& os, const Array& A)
-// {
-//     typename Array::const_iterator i;
-
-//     os << "[";
-//     for (i = A.begin(); i != A.end(); ++i) {
-//         print(os, *i);
-//         if (boost::next(i) != A.end()) os << ',';
-//     }
-//     os << "]\n";
-// }
-
+[[maybe_unused]] Index key_to_index(Data const& base_data, const Data::key_type& k)
+{
+    return std::distance(base_data.begin(), base_data.find(k));
 };
 
-void part1(Data const& base_data)
+[[maybe_unused]] Data::key_type index_to_key(Data const& base_data, const Index& i)
+{
+    return std::next(base_data.begin(), i)->first;
+};
+
+[[maybe_unused]] std::string to_string(KeySet const& ks)
+{
+    std::stringstream ss;
+    for (auto const& k : ks) {
+        if (ss.tellp() > 0) {
+            ss << ",";
+        }
+        ss << k;
+    }
+    return ss.str();
+}
+
+[[maybe_unused]] std::string to_string(State const& s)
+{
+    return fmt::format(
+        "(currrent: {}, valves: {}, minutes: {}, total_score: {}, moves: {})",
+        s.current,
+        s.valves,
+        s.minutes,
+        s.total_score,
+        to_string(s.available_moves));
+}
+
+[[maybe_unused]] std::string to_string(State2 const& s)
+{
+    return fmt::format(
+        "(currrent: {}/{}, valves: {}, minutes: {}, total_score: {})",
+        index_to_key(s.data, s.players.p1.position),
+        index_to_key(s.data, s.players.p2.position),
+        s.valves,
+        s.minutes,
+        s.total_score);
+}
+
+[[maybe_unused]] void print(std::ostream& os, const Dist_Type& x)
+{
+    os << x;
+}
+
+
+template<typename Array>
+void print(std::ostream& os, const Array& A)
+{
+    typename Array::const_iterator i;
+
+    os << "[";
+    for (i = A.begin(); i != A.end(); ++i) {
+        print(os, *i);
+        if (boost::next(i) != A.end()) os << ',';
+    }
+    os << "]\n";
+}
+
+
+Matrix calculate_distances(Data const& base_data)
 {
     const unsigned node_count = base_data.size();
     Matrix distances{boost::extents[node_count][node_count]};
@@ -126,18 +231,11 @@ void part1(Data const& base_data)
     }
 
     // fill in direct distances
-    auto key_to_index = [&base_data](const Data::key_type& k) -> Index {
-        return std::distance(base_data.begin(), base_data.find(k));
-    };
-    // auto index_to_key = [&base_data](const Index& i) -> Data::key_type {
-    //     return std::next(base_data.begin(), i)->first;
-    // };
-
     for (auto const& [k, p] : base_data) {
-        const Index from = key_to_index(k);
+        const Index from = key_to_index(base_data, k);
         // fmt::print("{} at {} leads to ", k, from);
         for (auto const& dst : p.destinations) {
-            const Index to = key_to_index(dst);
+            const Index to = key_to_index(base_data, dst);
             // fmt::print("{} at {},", dst, to);
             distances[from][to] = 1;
             distances[to][from] = 1;
@@ -162,6 +260,13 @@ void part1(Data const& base_data)
 
     // print(std::cout, distances);
 
+    return distances;
+}
+
+};  // namespace
+
+void part1(Data const& base_data, Matrix const& distances)
+{
     StateMap state_map;
     {
         auto& state = state_map[{"AA"}];
@@ -169,7 +274,7 @@ void part1(Data const& base_data)
             if (p.rate < 1 || k == "AA") continue;
             state.available_moves.insert(k);
         }
-        state.current = key_to_index("AA");
+        state.current = key_to_index(base_data, "AA");
     }
 
     std::deque<KeySet> q;
@@ -193,7 +298,7 @@ void part1(Data const& base_data)
 
         for (auto const& dst : state.available_moves) {
             // fmt::print("Moving from {} to {}\n", index_to_key(state.current), dst);
-            auto dist = distances[state.current][key_to_index(dst)];
+            auto dist = distances[state.current][key_to_index(base_data, dst)];
             // fmt::print("distance: {}\n", dist);
 
             KeySet dst_key = from;
@@ -202,7 +307,7 @@ void part1(Data const& base_data)
             // fmt::print("new key {}\n", to_string(dst_key));
 
             State new_state = state;
-            new_state.current = key_to_index(dst);
+            new_state.current = key_to_index(base_data, dst);
             new_state.available_moves.erase(dst);
 
             new_state.minutes += dist;
@@ -269,6 +374,98 @@ void part1(Data const& base_data)
 }
 
 
+void part2(Data const& base_data, Matrix const& distances)
+{
+    StateMap2 state_map;
+    state_map.insert(std::make_pair(Players {}, State2 {base_data}));  // initial state at position 0 -> AA
+
+    std::deque<Players> q;
+    q.push_back({});  // initial state at position 0 -> AA
+
+    auto next_player_action = [](State2 const& state, Player const& player) {
+        std::vector<Player> result;
+
+        Pipe const& pipe = state.data.at(index_to_key(state.data, player.position));
+
+        if (pipe.rate > 0) {
+            // open current valve
+            result.push_back({Action::OPEN, player.position});
+        }
+
+        // add valves near
+        for (auto const& pos : pipe.destinations) {
+            result.push_back({Action::MOVE, key_to_index(state.data, pos)});
+        }
+
+        return result;
+    };
+
+
+    while (!q.empty()) {
+        Players current = q.front();
+        q.pop_front();
+
+        State2 const& current_state = state_map.at(current);
+
+        for (auto p1 : next_player_action(current_state, current_state.players.p1)) {
+            for (auto p2 : next_player_action(current_state, current_state.players.p2)) {
+                State2 new_state = current_state;
+                ++new_state.minutes;
+                new_state.players = {p1, p2, new_state.minutes};
+
+                if (new_state.minutes >= 27) {
+                    continue;
+                }
+
+                if (p1.action == Action::OPEN) {
+                    // open valve
+                    Pipe& pipe = new_state.data.at(index_to_key(new_state.data, p1.position));
+                    if (pipe.rate > 0) {
+                        new_state.valves += pipe.rate;
+                        pipe.rate = 0;
+                    }
+                }
+                if (p2.action == Action::OPEN) {
+                    // open valve
+                    Pipe& pipe = new_state.data.at(index_to_key(new_state.data, p2.position));
+                    if (pipe.rate > 0) {
+                        new_state.valves += pipe.rate;
+                        pipe.rate = 0;
+                    }
+                }
+                new_state.total_score += new_state.valves;
+
+                // fmt::print("cur: {} new: {}\n", to_string(current_state), to_string(new_state));
+
+                auto it = state_map.find(new_state.players);
+                if (it == state_map.end()) {
+                    state_map.insert({new_state.players, new_state});
+                    q.push_back(new_state.players);
+                } else {
+                    auto& old_state = it->second;
+                    if (new_state > old_state) {
+                        q.push_back(new_state.players);
+                        old_state = std::move(new_state);
+                    }
+                }
+            }
+        }
+    }
+
+    for (auto& [k, s] : state_map) {
+        s.total_score += (26 - s.minutes) * s.valves;
+        s.minutes += (26 - s.minutes);
+    }
+
+    State2 s_max {base_data};
+    for (auto const& [k, s] : state_map) {
+        s_max = std::max((const State2)s_max, s);
+    }
+
+    fmt::print("2: {}\n", s_max.total_score);
+}
+
+
 int main()
 {
     Data data {};
@@ -306,7 +503,10 @@ int main()
     //     fmt::print("{}, rate {}, dest: {}\n", k, p.rate, boost::join(p.destinations, ","));
     // }
 
-    part1(data);
+    const Matrix distances = calculate_distances(data);
+
+    part1(data, distances);
+    part2(data, distances);
 
     return 0;
 }
