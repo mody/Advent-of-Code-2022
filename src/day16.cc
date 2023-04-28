@@ -1,7 +1,3 @@
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/multi_array.hpp>
-#include <boost/regex.hpp>
 #include <cassert>
 #include <cstring>
 #include <deque>
@@ -16,6 +12,12 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/functional/hash.hpp>
+#include <boost/multi_array.hpp>
+#include <boost/regex.hpp>
 
 using StringVect = std::vector<std::string>;
 
@@ -130,7 +132,7 @@ struct hash<Player>
     size_t operator()(Player const& p) const noexcept
     {
         size_t seed = 0;
-        boost::hash_combine(seed, p.action);
+        boost::hash_combine(seed, static_cast<unsigned>(p.action));
         boost::hash_combine(seed, p.position);
         return seed;
     }
