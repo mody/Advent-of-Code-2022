@@ -2,6 +2,7 @@
 #include <array>
 #include <deque>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <numeric>
@@ -50,7 +51,7 @@ using Robots = std::array<Robot, MATERIAL_SIZE>;
 struct Blueprint
 {
     unsigned id = 0;
-    Robots robots = {0};
+    Robots robots = {{{0}}};
     Materials maximums = {0};
 
     void calculate_maximums() noexcept
@@ -64,6 +65,7 @@ struct Blueprint
 
     unsigned max(unsigned mat) const noexcept
     {
+        assert(mat != Material::GEODE);
         return maximums.at(mat);
     }
 
@@ -168,17 +170,6 @@ struct hash<Storage>
     }
 };
 
-// template<>
-// struct hash<Robot>
-// {
-//     size_t operator()(Robot const& r) const noexcept
-//     {
-//         size_t seed = 0;
-//         boost::hash_combine(seed, r.requirement);
-//         return seed;
-//     }
-// };
-
 template<>
 struct hash<State>
 {
@@ -226,10 +217,9 @@ struct hash<State>
 }
 #endif
 
-void part1(Blueprints const& blueprints)
+std::map<unsigned, unsigned> work(const unsigned minute_limit, Blueprints const& blueprints)
 {
-    constexpr int MINUTE_LIMIT = 24;
-    unsigned quality_level = 0;
+    std::map<unsigned, unsigned> result;
 
     for (auto const& blueprint : blueprints) {
         State initial;
@@ -244,11 +234,47 @@ void part1(Blueprints const& blueprints)
 #ifdef DO_LOG
             print(state);
 #endif
-            if (state.minute >= MINUTE_LIMIT) {
+            if (state.minute >= minute_limit) {
                 max_geodes = std::max(max_geodes, state.storage.storage.at(Material::GEODE));
                 continue;
             }
 
+            if (state.storage.diff.at(Material::GEODE) > 0) {
+                // can build geodes
+                const unsigned time_left = minute_limit - state.minute;
+                unsigned added_geodes = state.storage.diff.at(Material::GEODE);
+                unsigned possible_geodes = state.storage.storage.at(Material::GEODE);
+                const unsigned required_obisidan = blueprint.robots.at(Material::GEODE).requirement.at(Material::OBSIDIAN);
+
+                unsigned current_obsidian = state.storage.storage.at(Material::OBSIDIAN);
+                const unsigned added_obsidian = state.storage.diff.at(Material::OBSIDIAN);
+                assert(required_obisidan > 0);
+
+                for (unsigned i = 0; i < time_left; ++i) {
+                    possible_geodes += added_geodes;
+                    current_obsidian += added_obsidian;
+                    if (current_obsidian >= required_obisidan) {
+                        current_obsidian -= (required_obisidan - added_obsidian);
+                        added_geodes += 1;
+                    }
+                }
+                if (possible_geodes < max_geodes)
+                {
+#ifdef DO_LOG
+                    fmt::print("Can't beat the current best\n");
+#endif
+                    continue;
+                }
+            }
+
+            if ((!state.storage.can_build_robot(blueprint.robots.at(Material::GEODE))
+                 && state.storage.diff.at(Material::GEODE) > 0)
+                || (!state.storage.can_build_robot(blueprint.robots.at(Material::OBSIDIAN))
+                    && state.storage.diff.at(Material::OBSIDIAN) > 0)
+                || (!state.storage.can_build_robot(blueprint.robots.at(Material::CLAY))
+                    && state.storage.diff.at(Material::CLAY) > 0)
+                || (!state.storage.can_build_robot(blueprint.robots.at(Material::ORE))
+                    && state.storage.diff.at(Material::ORE) > 0))
             {
                 State next_state = state;
                 next_state.minute++;
@@ -265,18 +291,7 @@ void part1(Blueprints const& blueprints)
                 State next_state = state;
                 next_state.minute++;
 
-                // if (next_state.storage.diff.at(mat) >= blueprint.max(mat)
-                //     && next_state.storage.storage.at(mat) >= blueprint.max(mat)
-                //     )
-
-                // if (next_state.storage.diff.at(mat) >= (2*blueprint.max(mat))
-                //     || next_state.storage.storage.at(mat) >= (2*blueprint.max(mat))
-                //     )
-
-                if (next_state.storage.diff.at(mat) > blueprint.max(mat)
-                    || next_state.storage.storage.at(mat) > blueprint.max(mat) + 1
-                    )
-                {
+                if (next_state.storage.diff.at(mat) >= blueprint.max(mat)) {
 #ifdef DO_LOG
                     fmt::print("No need to build robot for {}\n", Material2Str.at(mat));
 #endif
@@ -320,9 +335,35 @@ void part1(Blueprints const& blueprints)
 // #ifdef DO_LOG
         fmt::print("{}: {}\n", blueprint.id, max_geodes);
 // #endif
-        quality_level += blueprint.id * max_geodes;
+        result[blueprint.id] = max_geodes;
     }
-    fmt::print("1: {}\n", quality_level);
+    return result;
+}
+
+void part1(Blueprints const& blueprints)
+{
+    const auto& result = work(24, blueprints);
+
+    unsigned quality_level = 0;
+    for (auto const& [id, geodes] : result) {
+        quality_level += id * geodes;
+    }
+    fmt::print("part 1: {}\n", quality_level);
+}
+
+void part2(Blueprints blueprints)
+{
+    if (blueprints.size() > 3) {
+        blueprints.resize(3);
+    }
+
+    auto const& result = work(32, blueprints);
+
+    unsigned quality_level = 1;
+    for (auto const& [_, geodes] : result) {
+        quality_level *= geodes;
+    }
+    fmt::print("\npart 2: {}\n", quality_level);
 }
 
 
@@ -365,11 +406,10 @@ int main()
             b.calculate_maximums();
             blueprints.push_back(std::move(b));
         }
-        // std::cout << std::endl;
     }
 
     part1(blueprints);
-
+    part2(blueprints);
 
     return 0;
 }
