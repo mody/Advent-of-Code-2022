@@ -15,6 +15,11 @@ constexpr Direction South{0,  1};
 constexpr Direction West{-1, 0};
 constexpr Direction East{ 1, 0};
 
+constexpr Direction NW{-1, -1};
+constexpr Direction NE{ 1, -1};
+constexpr Direction SW{-1,  1};
+constexpr Direction SE{ 1,  1};
+
 constexpr Direction Up{0, -1};
 constexpr Direction Down{0,  1};
 constexpr Direction Left{-1, 0};
@@ -30,6 +35,12 @@ struct Point
         : x {x_}
         , y {y_}
     { }
+
+    Point(Point const&) noexcept = default;
+    Point(Point&&) noexcept = default;
+
+    Point& operator=(Point const&) noexcept = default;
+    Point& operator=(Point&&) noexcept = default;
 
     bool operator==(Point const& o) const noexcept { return x == o.x && y == o.y; }
 

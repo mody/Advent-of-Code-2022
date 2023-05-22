@@ -29,6 +29,12 @@ struct Point
         , z {z_}
     { }
 
+    Point(Point const&) noexcept = default;
+    Point(Point&&) noexcept = default;
+
+    Point& operator=(Point const&) noexcept = default;
+    Point& operator=(Point&&) noexcept = default;
+
     bool operator==(Point const& o) const noexcept { return x == o.x && y == o.y && z == o.z; }
 
     Point& operator+=(Direction const& o) noexcept
