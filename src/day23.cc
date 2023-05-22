@@ -16,6 +16,7 @@ struct Tile
 {
     char c = {};
     Point next = {};
+    unsigned neighs = {};
 };
 
 struct World {
@@ -65,7 +66,7 @@ struct World {
 
 template <typename T> class TD;
 
-void part1(World world)
+std::pair<World, unsigned> process(World world, unsigned rounds)
 {
     enum
     {
@@ -83,7 +84,7 @@ void part1(World world)
     constexpr int LEFT = West|NW|SW;
     constexpr int RIGHT = East|NE|SE;
 
-    std::map<int, Gfx_2d::Direction> DIRECTIONS = {
+    static const std::map<int, Gfx_2d::Direction> DIRECTIONS = {
         {North, Gfx_2d::North},
         {South, Gfx_2d::South},
         {West, Gfx_2d::West},
@@ -93,42 +94,69 @@ void part1(World world)
         {SW, Gfx_2d::SW},
         {SE, Gfx_2d::SE}};
 
-    for (unsigned round = 0; round < 10; ++round) {
-        unsigned unchanged = 0;
+    static const std::map<int, int> OPOSITE_DIRECTIONS = {
+        {North, South}, {South, North}, {West, East}, {East, West}, {NW, SE}, {NE, SW}, {SW, NE}, {SE, NW}};
+
+    unsigned round = 1;
+    for (; round <= rounds; ++round) {
+        // fmt::print("\nRound {}\n", round);
+        // fmt::print(
+        //     "directions: {}{}{}{}\n",
+        //     world.directions.at(0),
+        //     world.directions.at(1),
+        //     world.directions.at(2),
+        //     world.directions.at(3));
+        // world.dump();
+
         for (auto& [px, tile] : world.mapa) {
-            unsigned char neighs = 0;
             for (auto const& [dir1, dir2] : DIRECTIONS) {
+                if (tile.neighs & dir1) {
+                    continue;
+                }
                 auto it = world.mapa.find(px + dir2);
                 if (it != world.mapa.end() && it->second.c == '#') {
-                    neighs |= dir1;
+                    tile.neighs |= dir1;
+                    it->second.neighs |= OPOSITE_DIRECTIONS.at(dir1);
                 }
             }
+        }
 
+        {
+            unsigned unchanged = 0;
+            for (auto const& [_, tile] : world.mapa) {
+                unchanged |= tile.neighs;
+            }
+
+            if (unchanged == 0) {
+                break;
+            }
+        }
+
+        for (auto& [px, tile] : world.mapa) {
             // fmt::print("{},{} neighs {:#0b} -> ", px.x, px.y, neighs);
-            if (neighs == 0) {
+            tile.next = px; // default is to stay put
+            if (tile.neighs == 0) {
                 // not moving
-                tile.next = px;
-                ++unchanged;
             } else {
                 for (auto const& d : world.directions) {
                     if (d == 'N') {
-                        if ((neighs & UP) == 0) {
-                            tile.next = px + Gfx_2d::North;
+                        if ((tile.neighs & UP) == 0) {
+                            tile.next += Gfx_2d::North;
                             break;
                         }
                     } else if (d == 'S') {
-                        if ((neighs & DOWN) == 0) {
-                            tile.next = px + Gfx_2d::South;
+                        if ((tile.neighs & DOWN) == 0) {
+                            tile.next += Gfx_2d::South;
                             break;
                         }
                     } else if (d == 'W') {
-                        if ((neighs & LEFT) == 0) {
-                            tile.next = px + Gfx_2d::West;
+                        if ((tile.neighs & LEFT) == 0) {
+                            tile.next += Gfx_2d::West;
                             break;
                         }
                     } else if (d == 'E') {
-                        if ((neighs & RIGHT) == 0) {
-                            tile.next = px + Gfx_2d::East;
+                        if ((tile.neighs & RIGHT) == 0) {
+                            tile.next += Gfx_2d::East;
                             break;
                         }
                     } else {
@@ -139,16 +167,12 @@ void part1(World world)
             // fmt::print("{},{}\n", tile.next.x, tile.next.y);
         }
 
-        if (unchanged == world.mapa.size()) {
-            break;
-        }
-
         std::unordered_map<Point, unsigned> counts;
         for (auto const& [_, tile] : world.mapa) {
             counts[tile.next]++;
         }
 
-        World w2;
+        World w2 = {};
         for (auto const& [px, tile] : world.mapa) {
             // fmt::print("{},{} count {}\n", tile.next.x, tile.next.y, counts.at(tile.next));
             if (counts.at(tile.next) == 1) {
@@ -161,19 +185,32 @@ void part1(World world)
         w2.directions = world.directions;
         w2.rotate_directions();
         // w2.dump();
+        assert(w2.mapa.size() == world.mapa.size());
         std::swap(world, w2);
     }
 
     world.min_max();
-    unsigned unused = 0;
-    for (Coord y = world.min_y; y <= world.max_y; ++y) {
-        for (Coord x = world.min_x; x <= world.max_x; ++x) {
-            if (!world.mapa.contains({x, y})) {
-                ++unused;
-            }
-        }
-    }
+    return std::make_pair(world, round);
+}
+
+void part1(World world)
+{
+    auto const& [w2, _] = process(std::move(world), 10);
+
+    w2.min_max();
+    const unsigned unused = (w2.max_x - w2.min_x + 1)*(w2.max_y - w2.min_y + 1) - w2.mapa.size();
     fmt::print("1: {}\n", unused);
+}
+
+void part2(World world)
+{
+    auto const& [_, round] = process(std::move(world), 99999);
+
+    fmt::print("2: {}\n", round);
+    // 1038 TOO HIGH
+    // 1039 TOO HIGH
+    // 1040 TOO HIGH
+    // 903 from others
 }
 
 int main()
@@ -200,4 +237,5 @@ int main()
     // world.dump();
 
     part1(world);
+    part2(world);
 }
