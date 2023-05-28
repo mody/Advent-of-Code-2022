@@ -8,6 +8,25 @@ namespace Gfx_2d {
 struct Direction
 {
     int dx = 0, dy = 0;
+
+    template<typename T>
+    Direction operator*(const T& num) const noexcept
+    {
+        Direction d {dx, dy};
+        d *= num;
+        return d;
+    }
+
+    template<typename T>
+    Direction& operator*=(const T& num) noexcept
+    {
+        static_assert(std::numeric_limits<T>::is_integer);
+        dx *= num;
+        dy *= num;
+        return *this;
+    }
+
+    bool operator==(Direction const& o) const noexcept { return dx == o.dx && dy == o.dy; }
 };
 
 constexpr Direction North{0, -1};
@@ -31,7 +50,7 @@ struct Point
     Coord x {}, y {};
 
     Point() noexcept = default;
-    Point(Coord x_, Coord y_) noexcept
+    constexpr Point(Coord x_, Coord y_) noexcept
         : x {x_}
         , y {y_}
     { }
