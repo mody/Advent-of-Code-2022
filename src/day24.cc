@@ -79,14 +79,14 @@ struct hash<Moment>
     }
 };
 
-}
+}  // namespace std
 
-void part1(Mapa mapa)
+unsigned process(Mapa const& mapa, Moment start, Point const dest)
 {
     std::deque<Moment> work_queue;
-    work_queue.push_front(Moment{0, {1, 0}}); // hard-coded start
+    work_queue.push_front(std::move(start)); // hard-coded start
 
-    const Point dest = {mapa.max_x - 2, mapa.max_y - 1};
+    // const Point dest = {mapa.max_x - 2, mapa.max_y - 1};
 
     std::unordered_set<Moment> visited;
     std::map<unsigned, Positions> PositionsCache;
@@ -108,9 +108,7 @@ void part1(Mapa mapa)
             next.position += dir;
 
             if (next.position == dest) {
-                fmt::print("1: {}\n", next.minute);
-                work_queue.clear();
-                break;
+                return next.minute;
             }
 
             if (next.position.x < 0 || next.position.y < 0 || next.position.x > mapa.max_x
@@ -134,6 +132,23 @@ void part1(Mapa mapa)
             work_queue.push_back(std::move(next));
         }
     }
+    return 0;
+}
+
+void part1(Mapa const& mapa)
+{
+    unsigned minutes = process(mapa, Moment{0, {1, 0}}, {mapa.max_x - 2, mapa.max_y - 1});
+    fmt::print("1: {}\n", minutes);
+}
+
+void part2(Mapa const& mapa)
+{
+    const Point start{1, 0};
+    const Point end{mapa.max_x - 2, mapa.max_y - 1};
+    unsigned minutes = process(mapa, Moment {0, start}, end);
+    minutes = process(mapa, Moment {minutes, end}, start);
+    minutes = process(mapa, Moment {minutes, start}, end);
+    fmt::print("2: {}\n", minutes);
 }
 
 int main()
@@ -185,4 +200,5 @@ int main()
     // }
 
     part1(mapa);
+    part2(mapa);
 }
