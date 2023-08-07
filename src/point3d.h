@@ -22,22 +22,22 @@ struct Point
 {
     Coord x {}, y {}, z{};
 
-    Point() noexcept = default;
-    Point(Coord x_, Coord y_, Coord z_) noexcept
+    constexpr Point() noexcept = default;
+    constexpr Point(Coord x_, Coord y_, Coord z_) noexcept
         : x {x_}
         , y {y_}
         , z {z_}
     { }
 
-    Point(Point const&) noexcept = default;
-    Point(Point&&) noexcept = default;
+    constexpr Point(Point const&) noexcept = default;
+    constexpr Point(Point&&) noexcept = default;
 
-    Point& operator=(Point const&) noexcept = default;
-    Point& operator=(Point&&) noexcept = default;
+    constexpr Point& operator=(Point const&) noexcept = default;
+    constexpr Point& operator=(Point&&) noexcept = default;
 
-    bool operator==(Point const& o) const noexcept { return x == o.x && y == o.y && z == o.z; }
+    constexpr bool operator==(Point const& o) const noexcept { return x == o.x && y == o.y && z == o.z; }
 
-    Point& operator+=(Direction const& o) noexcept
+    constexpr Point& operator+=(Direction const& o) noexcept
     {
         x += o.dx;
         y += o.dy;
@@ -45,13 +45,13 @@ struct Point
         return *this;
     }
 
-    friend Point operator+(Point lhs, Direction const& o) noexcept
+    constexpr friend Point operator+(Point lhs, Direction const& o) noexcept
     {
         lhs += o;
         return lhs;
     }
 
-    Point& operator-=(Direction const& o) noexcept
+    constexpr Point& operator-=(Direction const& o) noexcept
     {
         x -= o.dx;
         y -= o.dy;
@@ -59,17 +59,17 @@ struct Point
         return *this;
     }
 
-    friend Point operator-(Point lhs, Direction const& o) noexcept
+    constexpr friend Point operator-(Point lhs, Direction const& o) noexcept
     {
         lhs -= o;
         return lhs;
     }
 
-    Direction operator-(Point const& o) const noexcept { return {x - o.x, y - o.y, z - o.z}; }
+    constexpr Direction operator-(Point const& o) const noexcept { return {x - o.x, y - o.y, z - o.z}; }
 
-    bool operator<(Point const& o) const noexcept { return std::tie(x, y, z) < std::tie(o.x, o.y, o.z); }
+    constexpr bool operator<(Point const& o) const noexcept { return std::tie(x, y, z) < std::tie(o.x, o.y, o.z); }
 
-    Coord manhattan_dist(Point const& o) const noexcept
+    constexpr Coord manhattan_dist(Point const& o) const noexcept
     {
         return std::abs(x - o.x) + std::abs(y - o.y) + std::abs(z - o.z);
     }

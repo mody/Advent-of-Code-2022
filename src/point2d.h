@@ -10,7 +10,7 @@ struct Direction
     int dx = 0, dy = 0;
 
     template<typename T>
-    Direction operator*(const T& num) const noexcept
+    constexpr Direction operator*(const T& num) const noexcept
     {
         Direction d {dx, dy};
         d *= num;
@@ -18,7 +18,7 @@ struct Direction
     }
 
     template<typename T>
-    Direction& operator*=(const T& num) noexcept
+    constexpr Direction& operator*=(const T& num) noexcept
     {
         static_assert(std::numeric_limits<T>::is_integer);
         dx *= num;
@@ -26,7 +26,7 @@ struct Direction
         return *this;
     }
 
-    bool operator==(Direction const& o) const noexcept { return dx == o.dx && dy == o.dy; }
+    constexpr bool operator==(Direction const& o) const noexcept { return dx == o.dx && dy == o.dy; }
 };
 
 constexpr Direction North{0, -1};
@@ -49,51 +49,51 @@ struct Point
 {
     Coord x {}, y {};
 
-    Point() noexcept = default;
+    constexpr Point() noexcept = default;
     constexpr Point(Coord x_, Coord y_) noexcept
         : x {x_}
         , y {y_}
     { }
 
-    Point(Point const&) noexcept = default;
-    Point(Point&&) noexcept = default;
+    constexpr Point(Point const&) noexcept = default;
+    constexpr Point(Point&&) noexcept = default;
 
-    Point& operator=(Point const&) noexcept = default;
-    Point& operator=(Point&&) noexcept = default;
+    constexpr Point& operator=(Point const&) noexcept = default;
+    constexpr Point& operator=(Point&&) noexcept = default;
 
-    bool operator==(Point const& o) const noexcept { return x == o.x && y == o.y; }
+    constexpr bool operator==(Point const& o) const noexcept { return x == o.x && y == o.y; }
 
-    Point& operator+=(Direction const& o) noexcept
+    constexpr Point& operator+=(Direction const& o) noexcept
     {
         x += o.dx;
         y += o.dy;
         return *this;
     }
 
-    friend Point operator+(Point lhs, Direction const& o) noexcept
+    constexpr friend Point operator+(Point lhs, Direction const& o) noexcept
     {
         lhs += o;
         return lhs;
     }
 
-    Point& operator-=(Direction const& o) noexcept
+    constexpr Point& operator-=(Direction const& o) noexcept
     {
         x -= o.dx;
         y -= o.dy;
         return *this;
     }
 
-    friend Point operator-(Point lhs, Direction const& o) noexcept
+    constexpr friend Point operator-(Point lhs, Direction const& o) noexcept
     {
         lhs -= o;
         return lhs;
     }
 
-    Direction operator-(Point const& o) const noexcept { return {x - o.x, y - o.y}; }
+    constexpr Direction operator-(Point const& o) const noexcept { return {x - o.x, y - o.y}; }
 
-    bool operator<(Point const& o) const noexcept { return std::tie(x, y) < std::tie(o.x, o.y); }
+    constexpr bool operator<(Point const& o) const noexcept { return std::tie(x, y) < std::tie(o.x, o.y); }
 
-    Coord manhattan_dist(Point const& o) const noexcept { return std::abs(x - o.x) + std::abs(y - o.y); }
+    constexpr Coord manhattan_dist(Point const& o) const noexcept { return std::abs(x - o.x) + std::abs(y - o.y); }
 };
 
 }  // namespace Gfx_2d
