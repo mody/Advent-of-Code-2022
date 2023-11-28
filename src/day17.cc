@@ -144,8 +144,7 @@ public:
         for (Coord y = max_y; y >= std::max(max_y - 100, (Coord)0); --y) {
             for (Coord x = MIN_X; x <= MAX_X; ++x) {
                 const Point p {x, y};
-                const auto it = mapa.find(p);
-                if (it != mapa.end()) {
+                if (const auto it = mapa.find(p); it != mapa.end()) {
                     ss << it->second;
                 } else {
                     ss << ".";
@@ -282,10 +281,9 @@ bool Game::simulate_piece()
         }
     }
 
-    Coord base_y = get_max_y() + 4;
     std::shared_ptr<Brick> brick;
 
-    switch (piece_id) {
+    switch (Coord base_y = get_max_y() + 4; piece_id) {
     case 0: brick.reset(new Line(base_y, this)); break;
     case 1: brick.reset(new Plus(base_y, this)); break;
     case 2: brick.reset(new Lima(base_y, this)); break;

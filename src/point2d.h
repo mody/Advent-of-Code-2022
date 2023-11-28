@@ -1,15 +1,15 @@
 #include <boost/container_hash/hash.hpp>
-#include <cstdint>
-#include <tuple>
+
+#include <concepts>
+#include <type_traits>
 
 namespace Gfx_2d {
-
 
 struct Direction
 {
     int dx = 0, dy = 0;
 
-    template<typename T>
+    template<std::integral T>
     constexpr Direction operator*(const T& num) const noexcept
     {
         Direction d {dx, dy};
@@ -17,7 +17,7 @@ struct Direction
         return d;
     }
 
-    template<typename T>
+    template<std::integral T>
     constexpr Direction& operator*=(const T& num) noexcept
     {
         static_assert(std::numeric_limits<T>::is_integer);
@@ -44,7 +44,7 @@ constexpr Direction Down{0,  1};
 constexpr Direction Left{-1, 0};
 constexpr Direction Right{ 1, 0};
 
-template<typename Coord>
+template<std::integral Coord>
 struct Point
 {
     Coord x {}, y {};
@@ -93,7 +93,11 @@ struct Point
 
     constexpr bool operator<(Point const& o) const noexcept { return std::tie(x, y) < std::tie(o.x, o.y); }
 
-    constexpr Coord manhattan_dist(Point const& o) const noexcept { return std::abs(x - o.x) + std::abs(y - o.y); }
+    constexpr Coord manhattan_dist(Point const& o) const noexcept
+    {
+        return std::abs(std::make_signed_t<Coord>(x) - std::make_signed_t<Coord>(o.x))
+            + std::abs(std::make_signed_t<Coord>(y) - std::make_signed_t<Coord>(o.y));
+    }
 };
 
 }  // namespace Gfx_2d
@@ -106,8 +110,8 @@ struct hash<Gfx_2d::Point<Coord>>
     size_t operator()(Gfx_2d::Point<Coord> const& p) const noexcept
     {
         size_t seed = 0;
-        boost::hash_combine(seed, p.x);
-        boost::hash_combine(seed, p.y);
+        boost::hash_combine(seed, std::hash<Coord>{}(p.x));
+        boost::hash_combine(seed, std::hash<Coord>{}(p.y));
         return seed;
     }
 };

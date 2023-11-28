@@ -1,6 +1,7 @@
 #include "point3d.h"
 
 #include <cassert>
+#include <cstdint>
 #include <cstdlib>
 #include <deque>
 #include <fmt/core.h>

@@ -1,9 +1,9 @@
 #include <boost/container_hash/hash.hpp>
-#include <cstdint>
-#include <tuple>
+
+#include <concepts>
+#include <type_traits>
 
 namespace Gfx_3d {
-
 
 struct Direction
 {
@@ -17,7 +17,7 @@ constexpr Direction Right{ 1, 0, 0};
 constexpr Direction Closer{ 0, 0, -1};
 constexpr Direction Further{0, 0, 1};
 
-template<typename Coord>
+template<std::integral Coord>
 struct Point
 {
     Coord x {}, y {}, z{};
@@ -85,9 +85,9 @@ struct hash<Gfx_3d::Point<Coord>>
     size_t operator()(Gfx_3d::Point<Coord> const& p) const noexcept
     {
         size_t seed = 0;
-        boost::hash_combine(seed, p.x);
-        boost::hash_combine(seed, p.y);
-        boost::hash_combine(seed, p.z);
+        boost::hash_combine(seed, std::hash<Coord>{}(p.x));
+        boost::hash_combine(seed, std::hash<Coord>{}(p.y));
+        boost::hash_combine(seed, std::hash<Coord>{}(p.z));
         return seed;
     }
 };
